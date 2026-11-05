@@ -1,0 +1,59 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>AI Tutor</h1>
+    <p class="muted">Ask anything about {{if .User.LanguageName}}{{.User.LanguageName}}{{else}}programming{{end}}. The tutor explains at your {{.User.ExperienceLevel}} level and remembers the conversation.</p>
+  </div>
+  <a class="btn btn-secondary" href="/tutor/history">{{template "icon" "history"}} All conversations</a>
+</header>
+
+<div class="grid grid-main">
+  <section class="card">
+    <h2>Start a new conversation</h2>
+    {{with $d.AIError}}{{template "aierror" .}}{{end}}
+    <form method="post" action="/tutor" class="form" data-loading="The tutor is thinking…" novalidate>
+      {{template "csrf" .CSRFToken}}
+      <label class="field{{if .Errors.topic_id}} has-error{{end}}">
+        <span>Topic <small class="muted">(optional)</small></span>
+        <select name="topic_id">
+          <option value="">General question</option>
+          {{range $d.Topics}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $.Form.topic_id}} selected{{end}}>{{.Title}}</option>{{end}}
+        </select>
+        {{template "fielderror" .Errors.topic_id}}
+      </label>
+      <label class="field{{if .Errors.question}} has-error{{end}}">
+        <span>Your question</span>
+        <textarea name="question" rows="5" maxlength="4000" placeholder="e.g. Explain goroutines like I'm a beginner." required data-question>{{.Form.question}}</textarea>
+        {{template "fielderror" .Errors.question}}
+      </label>
+      <div class="row-between">
+        <span class="loading-note">{{template "loading"}} Writing an explanation — this can take a few seconds.</span>
+        <button class="btn btn-primary" type="submit">{{template "icon" "send"}} Ask the tutor</button>
+      </div>
+    </form>
+    <p class="section-title mt">Need inspiration?</p>
+    <div class="suggestions">
+      {{range $d.Suggestions}}<button type="button" class="suggestion" data-suggest="{{.}}">{{.}}</button>{{end}}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Recent conversations</h2>
+    {{if $d.Recent}}
+    <ul class="list">
+      {{range $d.Recent}}
+      <li class="list-item">
+        <div class="list-item-main">
+          <a href="/tutor/c/{{.ID}}">{{.Title}}</a>
+          <span class="list-item-meta">{{if .TopicTitle}}{{.TopicTitle}} · {{end}}{{timeAgo .UpdatedAt}}</span>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted">No conversations yet. Your first question will appear here.</p>
+    {{end}}
+  </section>
+</div>
+{{end}}

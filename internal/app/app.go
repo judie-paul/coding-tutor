@@ -6,8 +6,10 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
+	"codingtutor/internal/ai"
 	"codingtutor/internal/auth"
 	"codingtutor/internal/config"
 	"codingtutor/internal/dashboard"
@@ -15,6 +17,7 @@ import (
 	"codingtutor/internal/progress"
 	"codingtutor/internal/settings"
 	"codingtutor/internal/topics"
+	"codingtutor/internal/tutor"
 	"codingtutor/internal/users"
 	"codingtutor/internal/view"
 	"codingtutor/web"
@@ -25,6 +28,9 @@ type Deps struct {
 	Config config.Config
 	DB     *sql.DB
 	Logger *slog.Logger
+	// AI overrides the model client (tests pass a fake). When nil, an
+	// OpenAI-compatible client is built from Config.
+	AI ai.Completer
 	// BcryptCost overrides the password hashing cost (tests use the minimum).
 	BcryptCost int
 }
@@ -49,10 +55,22 @@ func New(d Deps) (*App, error) {
 	topicStore := topics.NewStore(d.DB)
 	sessions := auth.NewSessions(d.DB, userStore, cfg.SessionTTL, cfg.SecureCookies, logger)
 
-	authH := &auth.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
 	progressStore := progress.NewStore(d.DB)
+
+	completer := d.AI
+	if completer == nil {
+		completer = ai.NewOpenAIClient(ai.ClientConfig{
+			BaseURL: cfg.AIBaseURL, APIKey: cfg.AIAPIKey, Model: cfg.AIModel,
+			Timeout: cfg.AITimeout, JSONMode: cfg.AIJSONMode,
+		}, logger)
+	}
+	aiService := ai.NewService(completer, logger)
+	tutorService := tutor.NewService(d.DB, aiService, progressStore)
+
+	authH := &auth.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
 	dashboardH := &dashboard.Handlers{Progress: progressStore, View: renderer}
 	settingsH := &settings.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
+	tutorH := &tutor.Handlers{Service: tutorService, Topics: topicStore, View: renderer}
 
 	// Limit login/registration attempts per client IP to slow down password guessing.
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -62,8 +80,20 @@ func New(d Deps) (*App, error) {
 			renderer.Error(w, r, http.StatusTooManyRequests, "Too many attempts. Please wait a minute and try again.")
 		}))
 
+	// Limit AI requests per student: they cost money and take time.
+	aiLimiter := middleware.NewRateLimiter(cfg.AIRateLimit, time.Minute)
+	limitAI := middleware.Limit(aiLimiter,
+		func(r *http.Request) string {
+			return "user:" + strconv.FormatInt(users.FromContext(r.Context()).ID, 10)
+		},
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			renderer.Error(w, r, http.StatusTooManyRequests, "You're sending requests to the AI tutor very quickly. Please wait a minute and try again.")
+		}))
+
 	mux := http.NewServeMux()
 	protected := func(h http.HandlerFunc) http.Handler { return middleware.RequireAuth(h) }
+	// aiRoute requires login and applies the per-user AI rate limit.
+	aiRoute := func(h http.HandlerFunc) http.Handler { return middleware.RequireAuth(limitAI(h)) }
 
 	staticFS, err := fs.Sub(web.FS, "static")
 	if err != nil {
@@ -92,6 +122,13 @@ func New(d Deps) (*App, error) {
 	mux.HandleFunc("POST /logout", authH.Logout)
 
 	mux.Handle("GET /dashboard", protected(dashboardH.Show))
+
+	mux.Handle("GET /tutor", protected(tutorH.New))
+	mux.Handle("POST /tutor", aiRoute(tutorH.Create))
+	mux.Handle("GET /tutor/history", protected(tutorH.History))
+	mux.Handle("GET /tutor/c/{id}", protected(tutorH.Show))
+	mux.Handle("POST /tutor/c/{id}/messages", aiRoute(tutorH.Ask))
+	mux.Handle("POST /tutor/c/{id}/delete", protected(tutorH.Delete))
 
 	mux.Handle("GET /settings", protected(settingsH.Show))
 	mux.Handle("POST /settings/profile", protected(settingsH.UpdateProfile))

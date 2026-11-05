@@ -1,0 +1,53 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$c := $d.Conversation}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/tutor/history">Conversations</a>{{if $c.TopicTitle}} · <a href="/topics/{{$c.TopicSlug}}">{{$c.TopicTitle}}</a>{{end}}</p>
+    <h1>{{$c.Title}}</h1>
+    <p class="muted small">Started {{dateTime $c.CreatedAt}}</p>
+  </div>
+  <div class="row">
+    <a class="btn btn-secondary btn-sm" href="/tutor">{{template "icon" "plus"}} New conversation</a>
+    <form method="post" action="/tutor/c/{{$c.ID}}/delete" data-confirm="Delete this conversation? This cannot be undone.">
+      {{template "csrf" .CSRFToken}}
+      <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
+    </form>
+  </div>
+</header>
+
+<div class="chat">
+  <div class="chat-messages" id="chat-messages" aria-live="polite">
+    {{range $d.Messages}}
+    {{if eq .Role "user"}}
+    <div class="message message-user">
+      <span class="message-avatar" aria-hidden="true">{{initial $.User.Name}}</span>
+      <div class="message-body">{{.Content}}<span class="message-time">{{timeAgo .CreatedAt}}</span></div>
+    </div>
+    {{else}}
+    <div class="message message-assistant">
+      <span class="message-avatar" aria-hidden="true">AI</span>
+      <div class="message-body prose">{{markdown .Content}}<span class="message-time">{{timeAgo .CreatedAt}}</span></div>
+    </div>
+    {{end}}
+    {{end}}
+    <span id="latest"></span>
+  </div>
+
+  <div id="chat-error" role="alert">{{with $d.AIError}}{{template "aierror" .}}{{end}}</div>
+
+  <form method="post" action="/tutor/c/{{$c.ID}}/messages" class="chat-form" id="chat-form" data-user-initial="{{initial .User.Name}}">
+    {{template "csrf" .CSRFToken}}
+    <label class="sr-only" for="question">Ask a follow-up question</label>
+    <textarea id="question" name="question" rows="2" maxlength="4000" placeholder="Ask a follow-up question… (Enter to send, Shift+Enter for a new line)" required>{{.Form.question}}</textarea>
+    <button class="btn btn-primary" type="submit" aria-label="Send">{{template "icon" "send"}}</button>
+  </form>
+  <div class="suggestions">
+    <button type="button" class="suggestion" data-followup="Can you explain that code line by line?">Explain the code line by line</button>
+    <button type="button" class="suggestion" data-followup="Can you give me a simpler explanation with a real-world analogy?">Simpler, with an analogy</button>
+    <button type="button" class="suggestion" data-followup="Can you show me another example?">Another example</button>
+    <button type="button" class="suggestion" data-followup="What are common mistakes people make with this?">Common mistakes</button>
+  </div>
+</div>
+<script src="/static/js/chat.js" defer></script>
+{{end}}

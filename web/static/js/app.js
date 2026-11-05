@@ -101,6 +101,18 @@
     });
   }
 
+  // Suggestion chips fill the nearest question box.
+  function setupSuggestions() {
+    var target = document.querySelector("textarea[data-question]");
+    if (!target) return;
+    document.querySelectorAll("[data-suggest]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        target.value = btn.getAttribute("data-suggest");
+        target.focus();
+      });
+    });
+  }
+
   function escapeHTML(s) {
     var d = document.createElement("div");
     d.textContent = s;
@@ -115,6 +127,7 @@
     setupConfirm();
     setupLoadingForms();
     setupCodeInputs();
+    setupSuggestions();
     addCopyButtons(document);
   });
 })();

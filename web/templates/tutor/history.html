@@ -1,0 +1,39 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>Conversation history</h1>
+    <p class="muted">{{plural $d.Total "conversation" "conversations"}}, organized by topic.</p>
+  </div>
+  <a class="btn btn-primary" href="/tutor">{{template "icon" "plus"}} New conversation</a>
+</header>
+
+{{if $d.Groups}}
+{{range $d.Groups}}
+<section class="card">
+  <div class="card-header">
+    <h2>{{.Title}}</h2>
+    {{if .Slug}}<a class="small" href="/topics/{{.Slug}}">View topic</a>{{end}}
+  </div>
+  <ul class="list">
+    {{range .Conversations}}
+    <li class="list-item">
+      {{template "icon" "chat"}}
+      <div class="list-item-main">
+        <a href="/tutor/c/{{.ID}}">{{.Title}}</a>
+        <span class="list-item-meta">{{plural .MessageCount "message" "messages"}} · last active {{timeAgo .UpdatedAt}}</span>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+</section>
+{{end}}
+{{else}}
+<section class="card empty-state">
+  {{template "icon" "chat"}}
+  <h2>No conversations yet</h2>
+  <p>Ask the tutor your first question. Every conversation is saved here so you can revisit it later.</p>
+  <a class="btn btn-primary" href="/tutor">Ask a question</a>
+</section>
+{{end}}
+{{end}}
