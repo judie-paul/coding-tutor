@@ -1,0 +1,66 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$t := $d.Topic}}
+{{$p := $d.Progress}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/topics">Topics</a> · Topic {{$t.Position}}</p>
+    <h1>{{$t.Title}}</h1>
+    <div class="row">{{template "difficulty" $t.Difficulty}}<span class="muted small">{{$t.Language}}</span></div>
+  </div>
+  <form method="post" action="/topics/{{$t.Slug}}/complete">
+    {{template "csrf" .CSRFToken}}
+    {{if $p.LessonCompleted}}
+    <input type="hidden" name="completed" value="0">
+    <button class="btn btn-secondary" type="submit">{{template "icon" "check"}} Lesson completed · undo</button>
+    {{else}}
+    <input type="hidden" name="completed" value="1">
+    <button class="btn btn-primary" type="submit">{{template "icon" "check"}} Mark lesson as completed</button>
+    {{end}}
+  </form>
+</header>
+
+<div class="grid grid-main">
+  <div>
+    <section class="card">
+      <h2>What you'll learn</h2>
+      <p>{{$t.Summary}}</p>
+      <p class="section-title">Key points</p>
+      <ul class="key-points">
+        {{range $t.KeyPoints}}<li>{{.}}</li>{{end}}
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Study this topic</h2>
+      <p class="muted">A good way to learn: ask the tutor for an explanation, practice with an exercise, then check yourself with a quiz.</p>
+      <div class="quick-links">
+        <a class="quick-link" href="/tutor?topic={{$t.Slug}}">{{template "icon" "chat"}} Learn with the tutor</a>
+        <a class="quick-link" href="/exercises/new?topic={{$t.Slug}}">{{template "icon" "code"}} Practice exercise</a>
+        <a class="quick-link" href="/quizzes/new?topic={{$t.Slug}}">{{template "icon" "quiz"}} Take a quiz</a>
+      </div>
+    </section>
+  </div>
+
+  <aside>
+    <section class="card">
+      <h2>Your progress</h2>
+      <div class="progress-ring"><strong>{{$p.Score}}%</strong><span class="muted">mastery</span></div>
+      <div class="mt">{{template "progressbar" $p.Score}}</div>
+      <ul class="list mt">
+        <li class="list-item"><div class="list-item-main">Lesson</div><span class="badge {{if $p.LessonCompleted}}badge-success{{end}}">{{if $p.LessonCompleted}}Completed{{else}}Not yet{{end}}</span></li>
+        <li class="list-item"><div class="list-item-main">Exercises completed</div><strong>{{$p.ExercisesCompleted}} / {{$p.ExercisesAttempted}} attempted</strong></li>
+        <li class="list-item"><div class="list-item-main">Best quiz score</div><strong>{{if $p.HasQuiz}}{{$p.BestQuizPercent}}%{{else}}—{{end}}</strong></li>
+        <li class="list-item"><div class="list-item-main">Questions asked</div><strong>{{$p.QuestionsAsked}}</strong></li>
+        <li class="list-item"><div class="list-item-main">Hints used</div><strong>{{$p.HintsRequested}}</strong></li>
+      </ul>
+      <p class="small mt mb-0"><a href="/exercises?topic={{$t.Slug}}">Your exercises on this topic</a></p>
+    </section>
+
+    <nav class="row-between mt" aria-label="Topic navigation">
+      {{with $d.Prev}}<a class="btn btn-ghost btn-sm" href="/topics/{{.Slug}}">← {{.Title}}</a>{{else}}<span></span>{{end}}
+      {{with $d.Next}}<a class="btn btn-ghost btn-sm" href="/topics/{{.Slug}}">{{.Title}} →</a>{{end}}
+    </nav>
+  </aside>
+</div>
+{{end}}

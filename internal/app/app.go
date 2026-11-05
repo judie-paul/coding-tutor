@@ -13,6 +13,7 @@ import (
 	"codingtutor/internal/auth"
 	"codingtutor/internal/config"
 	"codingtutor/internal/dashboard"
+	"codingtutor/internal/exercises"
 	"codingtutor/internal/middleware"
 	"codingtutor/internal/progress"
 	"codingtutor/internal/settings"
@@ -66,11 +67,14 @@ func New(d Deps) (*App, error) {
 	}
 	aiService := ai.NewService(completer, logger)
 	tutorService := tutor.NewService(d.DB, aiService, progressStore)
+	exerciseService := exercises.NewService(d.DB, aiService, progressStore)
 
 	authH := &auth.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
 	dashboardH := &dashboard.Handlers{Progress: progressStore, View: renderer}
 	settingsH := &settings.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
 	tutorH := &tutor.Handlers{Service: tutorService, Topics: topicStore, View: renderer}
+	topicsH := &topics.Handlers{Store: topicStore, Progress: progressStore, View: renderer}
+	exercisesH := &exercises.Handlers{Service: exerciseService, Topics: topicStore, View: renderer}
 
 	// Limit login/registration attempts per client IP to slow down password guessing.
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -129,6 +133,16 @@ func New(d Deps) (*App, error) {
 	mux.Handle("GET /tutor/c/{id}", protected(tutorH.Show))
 	mux.Handle("POST /tutor/c/{id}/messages", aiRoute(tutorH.Ask))
 	mux.Handle("POST /tutor/c/{id}/delete", protected(tutorH.Delete))
+
+	mux.Handle("GET /topics", protected(topicsH.List))
+	mux.Handle("GET /topics/{slug}", protected(topicsH.Show))
+	mux.Handle("POST /topics/{slug}/complete", protected(topicsH.ToggleLesson))
+
+	mux.Handle("GET /exercises", protected(exercisesH.List))
+	mux.Handle("GET /exercises/new", protected(exercisesH.New))
+	mux.Handle("POST /exercises", aiRoute(exercisesH.Create))
+	mux.Handle("GET /exercises/{id}", protected(exercisesH.Show))
+	mux.Handle("POST /exercises/{id}/complete", protected(exercisesH.Complete))
 
 	mux.Handle("GET /settings", protected(settingsH.Show))
 	mux.Handle("POST /settings/profile", protected(settingsH.UpdateProfile))

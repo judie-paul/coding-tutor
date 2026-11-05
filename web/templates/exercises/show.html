@@ -1,0 +1,75 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$e := $d.Exercise}}
+{{$c := $e.Content}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/exercises">Exercises</a> · <a href="/topics/{{$e.TopicSlug}}">{{$e.TopicTitle}}</a></p>
+    <h1>{{$e.Title}}</h1>
+    <div class="row">
+      {{template "difficulty" $e.Difficulty}}
+      <span class="badge badge-primary">{{$e.TypeLabel}}</span>
+      {{if $e.Completed}}<span class="badge badge-success">Completed</span>{{end}}
+    </div>
+  </div>
+  {{if not $e.Completed}}
+  <form method="post" action="/exercises/{{$e.ID}}/complete">
+    {{template "csrf" .CSRFToken}}
+    <button class="btn btn-secondary" type="submit">{{template "icon" "check"}} Mark as understood</button>
+  </form>
+  {{end}}
+</header>
+
+<div class="grid grid-main">
+  <div>
+    <section class="card">
+      <p class="section-title">The problem</p>
+      <div class="prose">{{markdown $c.Description}}</div>
+
+      <p class="section-title">Learning objective</p>
+      <p>{{$c.Objective}}</p>
+
+      <p class="section-title">Requirements</p>
+      <ul class="key-points">{{range $c.Requirements}}<li>{{.}}</li>{{end}}</ul>
+
+      {{if $c.Examples}}
+      <p class="section-title">Examples</p>
+      {{range $c.Examples}}
+      <div class="io-grid">
+        <div><span class="muted small">Input</span><pre class="code">{{.Input}}</pre></div>
+        <div><span class="muted small">Expected output</span><pre class="code">{{.Output}}</pre></div>
+      </div>
+      {{with .Explanation}}<p class="muted small">{{.}}</p>{{end}}
+      {{end}}
+      {{end}}
+
+      {{if $c.Constraints}}
+      <p class="section-title">Constraints</p>
+      <ul class="key-points">{{range $c.Constraints}}<li>{{.}}</li>{{end}}</ul>
+      {{end}}
+
+      {{if $c.Concepts}}
+      <p class="section-title">Concepts to demonstrate</p>
+      <div class="row">{{range $c.Concepts}}<span class="badge">{{.}}</span>{{end}}</div>
+      {{end}}
+
+      {{if $c.StarterCode}}
+      <p class="section-title">Starter code</p>
+      <div class="code-block"><pre><code>{{$c.StarterCode}}</code></pre></div>
+      {{end}}
+    </section>
+  </div>
+
+  <aside>
+    <section class="card">
+      <h2>How to work on this</h2>
+      <ol class="key-points">
+        <li>Read the problem and the examples carefully.</li>
+        <li>Write your solution in your editor and try it with <code class="inline-code">go run</code>.</li>
+        <li>Stuck? Ask for a hint — they get more detailed one step at a time.</li>
+        <li>Submit your code for a review when you're ready.</li>
+      </ol>
+    </section>
+  </aside>
+</div>
+{{end}}

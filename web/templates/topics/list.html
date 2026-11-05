@@ -1,0 +1,37 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>{{if .User.LanguageName}}{{.User.LanguageName}} topics{{else}}Topics{{end}}</h1>
+    <p class="muted">Work through the learning path in order, or jump to whatever you need. You've studied {{$d.Totals.TopicsStudied}} of {{$d.Totals.Topics}} topics.</p>
+  </div>
+</header>
+
+{{if $d.Cards}}
+<div class="topic-grid">
+  {{range $d.Cards}}
+  <a class="card topic-card" href="/topics/{{.Slug}}">
+    <div class="row-between">
+      <span class="topic-number">Topic {{.Position}}</span>
+      {{template "difficulty" .Difficulty}}
+    </div>
+    <h2>{{.Title}}</h2>
+    <p>{{.Summary}}</p>
+    <div>
+      <div class="row-between small">
+        <span class="muted">{{if .Progress.LessonCompleted}}Lesson completed{{else if .Progress.Started}}In progress{{else}}Not started{{end}}</span>
+        <strong>{{.Progress.Score}}%</strong>
+      </div>
+      {{template "progressbar" .Progress.Score}}
+    </div>
+  </a>
+  {{end}}
+</div>
+{{else}}
+<section class="card empty-state">
+  {{template "icon" "book"}}
+  <h2>No topics yet</h2>
+  <p>Choose a programming language in your <a href="/settings">settings</a> to see its learning path.</p>
+</section>
+{{end}}
+{{end}}

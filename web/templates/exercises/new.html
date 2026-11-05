@@ -1,0 +1,49 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/exercises">Exercises</a></p>
+    <h1>Generate an exercise</h1>
+    <p class="muted">Pick a topic, a difficulty and the kind of practice you want. The tutor writes an exercise just for you.</p>
+  </div>
+</header>
+
+<section class="card">
+  {{with $d.AIError}}{{template "aierror" .}}{{end}}
+  {{with .Errors.options}}<div class="alert alert-error" role="alert">{{.}}</div>{{end}}
+  <form method="post" action="/exercises" class="form" data-loading="Creating your exercise…" novalidate>
+    {{template "csrf" .CSRFToken}}
+    <label class="field{{if .Errors.topic_id}} has-error{{end}}">
+      <span>Topic</span>
+      <select name="topic_id" required>
+        <option value="">Choose a topic…</option>
+        {{range $d.Topics}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $.Form.topic_id}} selected{{end}}>{{.Position}}. {{.Title}}</option>{{end}}
+      </select>
+      {{template "fielderror" .Errors.topic_id}}
+    </label>
+
+    <fieldset class="field">
+      <legend class="field-legend"><span>Difficulty</span></legend>
+      <div class="choice-group">
+        {{range $d.Difficulties}}
+        <label class="choice"><input type="radio" name="difficulty" value="{{.}}"{{if eq . $.Form.difficulty}} checked{{end}}><span>{{capitalize .}}</span></label>
+        {{end}}
+      </div>
+    </fieldset>
+
+    <fieldset class="field">
+      <legend class="field-legend"><span>Exercise type</span></legend>
+      <div class="choice-group">
+        {{range $d.Types}}
+        <label class="choice"><input type="radio" name="type" value="{{.Value}}"{{if eq .Value $.Form.type}} checked{{end}}><span>{{.Label}}</span></label>
+        {{end}}
+      </div>
+    </fieldset>
+
+    <div class="row-between">
+      <span class="loading-note">{{template "loading"}} Designing an exercise for you — this can take a few seconds.</span>
+      <button class="btn btn-primary" type="submit">{{template "icon" "code"}} Generate exercise</button>
+    </div>
+  </form>
+</section>
+{{end}}

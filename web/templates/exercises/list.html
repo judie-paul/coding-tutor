@@ -1,0 +1,41 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>Exercises{{with $d.Filter}}: {{.Title}}{{end}}</h1>
+    <p class="muted">{{plural (len $d.Exercises) "exercise" "exercises"}}, {{$d.Completed}} completed.{{if $d.Filter}} <a href="/exercises">Show all topics</a>{{end}}</p>
+  </div>
+  <a class="btn btn-primary" href="/exercises/new{{with $d.Filter}}?topic={{.Slug}}{{end}}">{{template "icon" "plus"}} New exercise</a>
+</header>
+
+{{if $d.Exercises}}
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Exercise</th><th>Topic</th><th>Difficulty</th><th>Status</th><th class="num">Hints</th><th class="num">Submissions</th></tr>
+      </thead>
+      <tbody>
+        {{range $d.Exercises}}
+        <tr>
+          <td><a href="/exercises/{{.ID}}"><strong>{{.Title}}</strong></a><br><span class="muted small">{{.TypeLabel}} · {{timeAgo .CreatedAt}}</span></td>
+          <td>{{.TopicTitle}}</td>
+          <td>{{template "difficulty" .Difficulty}}</td>
+          <td>{{if .Completed}}<span class="badge badge-success">Completed</span>{{else}}<span class="badge">Open</span>{{end}}</td>
+          <td class="num">{{.HintCount}}</td>
+          <td class="num">{{.SubmissionCount}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{else}}
+<section class="card empty-state">
+  {{template "icon" "code"}}
+  <h2>No exercises yet</h2>
+  <p>Practice makes progress. Generate an exercise at your level and give it a go.</p>
+  <a class="btn btn-primary" href="/exercises/new{{with $d.Filter}}?topic={{.Slug}}{{end}}">Generate an exercise</a>
+</section>
+{{end}}
+{{end}}
