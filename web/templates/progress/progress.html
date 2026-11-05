@@ -1,0 +1,158 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>Learning progress</h1>
+    <p class="muted">Everything here comes from what you've actually done — lessons, exercises, hints and quizzes.</p>
+  </div>
+</header>
+
+<section class="stats" aria-label="Progress summary">
+  <div class="stat"><div class="stat-value">{{$d.Totals.OverallPercent}}%</div><div class="stat-label">Overall mastery</div></div>
+  <div class="stat"><div class="stat-value">{{$d.Totals.TopicsMastered}}<span class="muted small"> / {{$d.Totals.Topics}}</span></div><div class="stat-label">Topics mastered (80%+)</div></div>
+  <div class="stat"><div class="stat-value">{{$d.Totals.ExercisesCompleted}}<span class="muted small"> / {{$d.Totals.ExercisesAttempted}}</span></div><div class="stat-label">Exercises completed / attempted</div></div>
+  <div class="stat"><div class="stat-value">{{if $d.Totals.QuizzesCompleted}}{{$d.Totals.AverageQuizPercent}}%{{else}}—{{end}}</div><div class="stat-label">Average latest quiz score</div></div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2>Overall progress</h2>
+    <span class="muted small">{{$d.Totals.LessonsCompleted}} lessons · {{$d.Totals.QuizzesCompleted}} quizzes · {{$d.Totals.HintsRequested}} hints · {{$d.Totals.QuestionsAsked}} questions asked</span>
+  </div>
+  {{template "progressbar" $d.Totals.OverallPercent}}
+  <p class="muted small mt mb-0">Each topic is worth 100%: 30% for completing the lesson, 35% for completing an exercise (15% for attempting one) and up to 35% from your best quiz score.</p>
+</section>
+
+<div class="grid grid-2 mt">
+  <section class="card">
+    <h2>{{template "icon" "warn"}} Areas to work on</h2>
+    {{if $d.Struggles}}
+    <ul class="list">
+      {{range $d.Struggles}}
+      <li class="list-item">
+        <div class="list-item-main">
+          <a href="/topics/{{.Slug}}">{{.Title}}</a>
+          <span class="list-item-meta">{{.Reason}}</span>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="/tutor?topic={{.Slug}}">Get help</a>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted mb-0">Nothing stands out yet. Topics show up here when quiz scores are low, exercises stay unfinished or you need lots of hints.</p>
+    {{end}}
+  </section>
+
+  <section class="card">
+    <h2>{{template "icon" "history"}} Suggested to revisit</h2>
+    {{if $d.Revisit}}
+    <ul class="list">
+      {{range $d.Revisit}}
+      <li class="list-item">
+        <div class="list-item-main">
+          <a href="/topics/{{.Slug}}">{{.Title}}</a>
+          <span class="list-item-meta">{{.Score}}% mastery{{if .HasQuiz}} · latest quiz {{.LastQuizPercent}}%{{end}}</span>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="/quizzes/new?topic={{.Slug}}">Quiz me</a>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted mb-0">Start a few topics and we'll suggest which ones to come back to.</p>
+    {{end}}
+  </section>
+</div>
+
+<section class="card mt">
+  <div class="card-header">
+    <h2>{{template "icon" "star"}} Personal study advice</h2>
+  </div>
+  {{with $d.AIError}}{{template "aierror" .}}{{end}}
+  {{with $d.Recommendations}}
+  {{with .Summary}}<p>{{.}}</p>{{end}}
+  <ul class="list">
+    {{range .Items}}
+    <li class="list-item">
+      <div class="list-item-main">
+        <strong>{{.Topic}}</strong>
+        <span class="list-item-meta">{{.Reason}}</span>
+        {{with .Action}}<span class="small">Next step: {{.}}</span>{{end}}
+      </div>
+    </li>
+    {{end}}
+  </ul>
+  <p class="disclaimer">Advice written by the AI from your recorded progress. Your statistics above are never changed by it.</p>
+  {{else}}
+  <p class="muted">Get suggestions from the AI study coach, based only on your recorded progress.</p>
+  {{end}}
+  <form method="post" action="/progress/recommendations" data-loading="Looking at your progress…">
+    {{template "csrf" .CSRFToken}}
+    <button class="btn btn-secondary" type="submit">{{if $d.Recommendations}}Refresh advice{{else}}Get study advice{{end}}</button>
+  </form>
+</section>
+
+<section class="card mt">
+  <h2>Topic by topic</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Topic</th><th>Mastery</th><th>Lesson</th><th class="num">Exercises</th><th class="num">Hints</th><th class="num">Best quiz</th></tr>
+      </thead>
+      <tbody>
+        {{range $d.Topics}}
+        <tr>
+          <td><a href="/topics/{{.Slug}}">{{.Title}}</a><br>{{template "difficulty" .Difficulty}}</td>
+          <td><strong>{{.Score}}%</strong>{{template "progressbar" .Score}}</td>
+          <td>{{if .LessonCompleted}}<span class="badge badge-success">Done</span>{{else}}<span class="muted">—</span>{{end}}</td>
+          <td class="num">{{.ExercisesCompleted}} / {{.ExercisesAttempted}}</td>
+          <td class="num">{{.HintsRequested}}</td>
+          <td class="num">{{if .HasQuiz}}{{.BestQuizPercent}}%{{else}}—{{end}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card mt">
+  <h2>Recent quiz results</h2>
+  {{if $d.RecentQuizzes}}
+  <ul class="list">
+    {{range $d.RecentQuizzes}}
+    <li class="list-item">
+      <span class="badge {{if ge .Percent 80}}badge-success{{else if ge .Percent 60}}badge-warning{{else}}badge-danger{{end}}">{{.Percent}}%</span>
+      <div class="list-item-main">
+        <a href="/quizzes/attempts/{{.AttemptID}}">{{.QuizTitle}}</a>
+        <span class="list-item-meta">{{.TopicTitle}} · {{.Score}}/{{.Total}} · {{timeAgo .CompletedAt}}</span>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="muted mb-0">No quizzes yet. <a href="/quizzes/new">Take your first quiz</a>.</p>
+  {{end}}
+</section>
+
+<section class="card mt" id="history">
+  <h2>Learning history</h2>
+  {{if $d.History}}
+  <ul class="list">
+    {{range $d.History}}
+    <li class="list-item">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="list-item-main">
+        {{if .Link}}<a href="{{.Link}}">{{.Description}}</a>{{else}}<strong>{{.Description}}</strong>{{end}}
+        <span class="list-item-meta">{{if .TopicTitle}}{{.TopicTitle}} · {{end}}{{dateTime .CreatedAt}}</span>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+  <nav class="row-between mt" aria-label="History pages">
+    {{if $d.HasPrev}}<a class="btn btn-ghost btn-sm" href="/progress?page={{add $d.Page -1}}#history">← Newer</a>{{else}}<span></span>{{end}}
+    {{if $d.HasNext}}<a class="btn btn-ghost btn-sm" href="/progress?page={{add $d.Page 1}}#history">Older →</a>{{end}}
+  </nav>
+  {{else}}
+  <p class="muted mb-0">Your learning activity will be recorded here.</p>
+  {{end}}
+</section>
+{{end}}

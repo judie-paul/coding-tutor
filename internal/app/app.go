@@ -78,6 +78,7 @@ func New(d Deps) (*App, error) {
 	topicsH := &topics.Handlers{Store: topicStore, Progress: progressStore, View: renderer}
 	exercisesH := &exercises.Handlers{Service: exerciseService, Topics: topicStore, View: renderer}
 	quizzesH := &quizzes.Handlers{Service: quizService, Topics: topicStore, View: renderer}
+	progressH := &progress.Handlers{Store: progressStore, AI: aiService, View: renderer}
 
 	// Limit login/registration attempts per client IP to slow down password guessing.
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -160,6 +161,9 @@ func New(d Deps) (*App, error) {
 	mux.Handle("GET /quizzes/{id}", protected(quizzesH.Take))
 	mux.Handle("POST /quizzes/{id}/attempts", protected(quizzesH.Submit))
 	mux.Handle("GET /quizzes/attempts/{id}", protected(quizzesH.Results))
+
+	mux.Handle("GET /progress", protected(progressH.Show))
+	mux.Handle("POST /progress/recommendations", aiRoute(progressH.Recommend))
 
 	mux.Handle("GET /settings", protected(settingsH.Show))
 	mux.Handle("POST /settings/profile", protected(settingsH.UpdateProfile))

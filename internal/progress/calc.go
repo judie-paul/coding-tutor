@@ -1,6 +1,10 @@
 package progress
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
 
 // Score weights. A topic is worth 100 points:
 //   - 30 for completing the lesson,
@@ -137,4 +141,47 @@ func clamp(v, lo, hi int) int {
 		return hi
 	}
 	return v
+}
+
+// Revisit suggests started topics worth revisiting: unfinished topics with
+// the lowest scores first, plus topics whose latest quiz score dropped well
+// below their best. At most n topics are returned.
+func Revisit(tps []TopicProgress, n int) []TopicProgress {
+	var out []TopicProgress
+	for _, tp := range tps {
+		dropped := tp.HasQuiz && tp.LastQuizPercent+20 <= tp.BestQuizPercent
+		if tp.Started && (tp.Score < 70 || dropped) {
+			out = append(out, tp)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Score < out[j].Score })
+	if len(out) > n {
+		out = out[:n]
+	}
+	return out
+}
+
+// FactSheet describes recorded progress in plain text for the AI study
+// coach. It contains only real, recorded numbers.
+func FactSheet(tps []TopicProgress) string {
+	t := Summarize(tps)
+	var b strings.Builder
+	fmt.Fprintf(&b, "Overall mastery: %d%% across %d topics (%d studied, %d mastered).\n",
+		t.OverallPercent, t.Topics, t.TopicsStudied, t.TopicsMastered)
+	fmt.Fprintf(&b, "Totals: %d lessons completed, %d exercises attempted, %d completed, %d hints used, %d quizzes taken, %d tutor questions asked.\n",
+		t.LessonsCompleted, t.ExercisesAttempted, t.ExercisesCompleted, t.HintsRequested, t.QuizzesCompleted, t.QuestionsAsked)
+	for _, tp := range tps {
+		if !tp.Started {
+			fmt.Fprintf(&b, "- %s (%s): not started.\n", tp.Title, tp.Difficulty)
+			continue
+		}
+		quiz := "no quiz taken"
+		if tp.HasQuiz {
+			quiz = fmt.Sprintf("%d quizzes, best %d%%, latest %d%%", tp.QuizzesTaken, tp.BestQuizPercent, tp.LastQuizPercent)
+		}
+		fmt.Fprintf(&b, "- %s (%s): mastery %d%%; lesson completed: %t; exercises %d completed of %d attempted; %d hints used; %s; %d tutor questions.\n",
+			tp.Title, tp.Difficulty, tp.Score, tp.LessonCompleted, tp.ExercisesCompleted, tp.ExercisesAttempted,
+			tp.HintsRequested, quiz, tp.QuestionsAsked)
+	}
+	return b.String()
 }

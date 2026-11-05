@@ -239,3 +239,36 @@ func boolInt(b bool) int {
 	}
 	return 0
 }
+
+// QuizResult is a completed quiz attempt shown on the progress page.
+type QuizResult struct {
+	AttemptID   int64
+	QuizTitle   string
+	TopicTitle  string
+	Percent     int
+	Score       int
+	Total       int
+	CompletedAt time.Time
+}
+
+// RecentQuizzes returns the user's latest quiz attempts.
+func (s *Store) RecentQuizzes(ctx context.Context, userID int64, limit int) ([]QuizResult, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT a.id, q.title, t.title, a.percent, a.score, a.total, a.completed_at
+		FROM quiz_attempts a JOIN quizzes q ON q.id = a.quiz_id JOIN topics t ON t.id = q.topic_id
+		WHERE a.user_id = ? ORDER BY a.completed_at DESC, a.id DESC LIMIT ?`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []QuizResult
+	for rows.Next() {
+		var r QuizResult
+		var completed string
+		if err := rows.Scan(&r.AttemptID, &r.QuizTitle, &r.TopicTitle, &r.Percent, &r.Score, &r.Total, &completed); err != nil {
+			return nil, err
+		}
+		r.CompletedAt = database.ParseTime(completed)
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}

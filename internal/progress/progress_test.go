@@ -2,6 +2,7 @@ package progress
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"codingtutor/internal/testutil"
@@ -115,5 +116,27 @@ func TestStoreCountersAndActivity(t *testing.T) {
 	// Another user's activity must not be visible.
 	if acts, _ := s.RecentActivity(ctx, 2, 10, 0); len(acts) != 0 {
 		t.Error("activity leaked across users")
+	}
+}
+
+func TestRevisitAndFactSheet(t *testing.T) {
+	tps := []TopicProgress{
+		{Title: "A", Started: true, Score: 90, HasQuiz: true, BestQuizPercent: 100, LastQuizPercent: 70}, // dropped
+		{Title: "B", Started: true, Score: 20},
+		{Title: "C", Score: 0}, // not started: never suggested
+		{Title: "D", Started: true, Score: 85, HasQuiz: true, BestQuizPercent: 90, LastQuizPercent: 85},
+	}
+	got := Revisit(tps, 5)
+	if len(got) != 2 || got[0].Title != "B" || got[1].Title != "A" {
+		t.Errorf("unexpected revisit list: %+v", got)
+	}
+	if len(Revisit(tps, 1)) != 1 {
+		t.Error("limit not applied")
+	}
+	sheet := FactSheet(tps)
+	for _, want := range []string{"- C (): not started.", "best 100%, latest 70%", "mastery 20%"} {
+		if !strings.Contains(sheet, want) {
+			t.Errorf("fact sheet missing %q:\n%s", want, sheet)
+		}
 	}
 }
