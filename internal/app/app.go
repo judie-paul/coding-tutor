@@ -179,7 +179,7 @@ func New(d Deps) (*App, error) {
 
 	handler := middleware.Chain(mux,
 		middleware.Recover(logger),
-		middleware.SecureHeaders,
+		middleware.SecureHeaders(cfg.SecureCookies),
 		middleware.LimitBody(1<<20), // 1 MB is plenty for forms and code submissions
 		sessions.LoadUser,
 		middleware.Logging(logger),

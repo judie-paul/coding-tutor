@@ -402,14 +402,15 @@ td.num, th.num { text-align: right; white-space: nowrap; }
   list-style: none; counter-reset: line;
   tab-size: 4;
 }
-.code-lines li { counter-increment: line; white-space: pre; padding-right: 1rem; }
+.code-lines li { counter-increment: line; display: flex; padding-right: 1rem; min-height: 1.55em; }
 .code-lines li::before {
   content: counter(line);
-  display: inline-block; width: 3rem; padding-right: .9rem; margin-right: .6rem;
+  flex: none; width: 3rem; padding-right: .9rem; margin-right: .6rem;
   text-align: right; color: #6b7280; border-right: 1px solid #374151;
   user-select: none;
 }
-.code-lines code { font-family: inherit; }
+/* The code is its own box so tab stops are measured from the code, not the gutter. */
+.code-lines code { font-family: inherit; white-space: pre; display: block; }
 
 .copy-btn {
   position: absolute; top: .45rem; right: .45rem;
@@ -434,6 +435,8 @@ td.num, th.num { text-align: right; white-space: nowrap; }
 @media (prefers-color-scheme: dark) { .message-user .message-body { color: #11132a; } }
 .message-assistant .message-body { background: var(--surface); border: 1px solid var(--border); border-top-left-radius: 4px; box-shadow: var(--shadow); }
 .message-time { display: block; font-size: .75rem; color: var(--muted); margin-top: .35rem; }
+.message-user .message-time { color: rgba(255, 255, 255, .8); }
+@media (prefers-color-scheme: dark) { .message-user .message-time { color: rgba(17, 19, 42, .75); } }
 
 .chat-form {
   position: sticky; bottom: 0;

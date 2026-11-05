@@ -66,8 +66,9 @@ func run(migrateOnly bool) error {
 		Handler:           application.Handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      cfg.AITimeout + 30*time.Second, // AI requests can be slow
-		IdleTimeout:       120 * time.Second,
+		// Structured AI calls may retry once, so allow two full AI timeouts.
+		WriteTimeout: 2*cfg.AITimeout + 30*time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 	return serve(srv, logger)
 }

@@ -89,9 +89,19 @@ func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
 }
 
 // SecureHeaders sets conservative security headers on every response.
-func SecureHeaders(next http.Handler) http.Handler {
+// When hsts is true (HTTPS deployments) browsers are told to always use HTTPS.
+func SecureHeaders(hsts bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return secureHeaders(next, hsts)
+	}
+}
+
+func secureHeaders(next http.Handler, hsts bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
+		if hsts {
+			h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
 		h.Set("Content-Security-Policy",
 			"default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "+
 				"form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
