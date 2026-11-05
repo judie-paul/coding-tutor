@@ -483,6 +483,7 @@ td.num, th.num { text-align: right; white-space: nowrap; }
 
 .question { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; background: var(--surface); box-shadow: var(--shadow); }
 .question + .question { margin-top: 1rem; }
+fieldset.question { margin-left: 0; margin-right: 0; min-width: 0; }
 .question-number { color: var(--muted); font-weight: 600; font-size: .85rem; }
 .question-prompt { font-weight: 600; font-size: 1.02rem; margin: .25rem 0 .9rem; }
 .options { display: flex; flex-direction: column; gap: .5rem; }

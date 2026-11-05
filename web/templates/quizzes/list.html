@@ -1,0 +1,60 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>Quizzes</h1>
+    <p class="muted">Check what you know. Quizzes are graded instantly, with an explanation for every answer.</p>
+  </div>
+  <a class="btn btn-primary" href="/quizzes/new">{{template "icon" "plus"}} New quiz</a>
+</header>
+
+{{if $d.Quizzes}}
+<div class="grid grid-main">
+  <section class="card">
+    <h2>Your quizzes</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Quiz</th><th>Topic</th><th>Difficulty</th><th class="num">Attempts</th><th class="num">Best</th></tr></thead>
+        <tbody>
+          {{range $d.Quizzes}}
+          <tr>
+            <td><a href="/quizzes/{{.ID}}"><strong>{{.Title}}</strong></a><br><span class="muted small">{{timeAgo .CreatedAt}}</span></td>
+            <td>{{.TopicTitle}}</td>
+            <td>{{template "difficulty" .Difficulty}}</td>
+            <td class="num">{{.Attempts}}</td>
+            <td class="num">{{if .Attempts}}{{.BestPercent}}%{{else}}<a href="/quizzes/{{.ID}}">Take it</a>{{end}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Recent results</h2>
+    {{if $d.Recent}}
+    <ul class="list">
+      {{range $d.Recent}}
+      <li class="list-item">
+        <span class="badge {{if ge .Percent 80}}badge-success{{else if ge .Percent 60}}badge-warning{{else}}badge-danger{{end}}">{{.Percent}}%</span>
+        <div class="list-item-main">
+          <a href="/quizzes/attempts/{{.ID}}">{{.QuizTitle}}</a>
+          <span class="list-item-meta">{{.Score}}/{{.Total}} · {{timeAgo .CompletedAt}}</span>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted">You haven't finished a quiz yet.</p>
+    {{end}}
+  </section>
+</div>
+{{else}}
+<section class="card empty-state">
+  {{template "icon" "quiz"}}
+  <h2>No quizzes yet</h2>
+  <p>Generate a short quiz on any topic to see how well you understand it.</p>
+  <a class="btn btn-primary" href="/quizzes/new">Create a quiz</a>
+</section>
+{{end}}
+{{end}}

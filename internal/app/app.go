@@ -16,6 +16,7 @@ import (
 	"codingtutor/internal/exercises"
 	"codingtutor/internal/middleware"
 	"codingtutor/internal/progress"
+	"codingtutor/internal/quizzes"
 	"codingtutor/internal/settings"
 	"codingtutor/internal/topics"
 	"codingtutor/internal/tutor"
@@ -68,6 +69,7 @@ func New(d Deps) (*App, error) {
 	aiService := ai.NewService(completer, logger)
 	tutorService := tutor.NewService(d.DB, aiService, progressStore)
 	exerciseService := exercises.NewService(d.DB, aiService, progressStore)
+	quizService := quizzes.NewService(d.DB, aiService, progressStore)
 
 	authH := &auth.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
 	dashboardH := &dashboard.Handlers{Progress: progressStore, View: renderer}
@@ -75,6 +77,7 @@ func New(d Deps) (*App, error) {
 	tutorH := &tutor.Handlers{Service: tutorService, Topics: topicStore, View: renderer}
 	topicsH := &topics.Handlers{Store: topicStore, Progress: progressStore, View: renderer}
 	exercisesH := &exercises.Handlers{Service: exerciseService, Topics: topicStore, View: renderer}
+	quizzesH := &quizzes.Handlers{Service: quizService, Topics: topicStore, View: renderer}
 
 	// Limit login/registration attempts per client IP to slow down password guessing.
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -150,6 +153,13 @@ func New(d Deps) (*App, error) {
 	mux.Handle("GET /review", protected(exercisesH.ReviewPage))
 	mux.Handle("POST /review", aiRoute(exercisesH.SubmitReview))
 	mux.Handle("GET /review/{id}", protected(exercisesH.ShowReview))
+
+	mux.Handle("GET /quizzes", protected(quizzesH.List))
+	mux.Handle("GET /quizzes/new", protected(quizzesH.New))
+	mux.Handle("POST /quizzes", aiRoute(quizzesH.Create))
+	mux.Handle("GET /quizzes/{id}", protected(quizzesH.Take))
+	mux.Handle("POST /quizzes/{id}/attempts", protected(quizzesH.Submit))
+	mux.Handle("GET /quizzes/attempts/{id}", protected(quizzesH.Results))
 
 	mux.Handle("GET /settings", protected(settingsH.Show))
 	mux.Handle("POST /settings/profile", protected(settingsH.UpdateProfile))

@@ -1,0 +1,62 @@
+{{define "content"}}
+{{$a := .Data}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/quizzes">Quizzes</a> · <a href="/topics/{{$a.Quiz.TopicSlug}}">{{$a.Quiz.TopicTitle}}</a></p>
+    <h1>Results: {{$a.Quiz.Title}}</h1>
+    <p class="muted small">Completed {{dateTime $a.CompletedAt}}</p>
+  </div>
+  <div class="row">
+    <a class="btn btn-secondary" href="/quizzes/{{$a.Quiz.ID}}">Retake quiz</a>
+    <a class="btn btn-primary" href="/quizzes/new?topic={{$a.Quiz.TopicSlug}}">New quiz</a>
+  </div>
+</header>
+
+<section class="card">
+  <div class="row-between">
+    <div>
+      <div class="score">{{$a.Percent}}%</div>
+      <p class="muted mb-0">{{$a.Score}} of {{$a.Total}} correct</p>
+    </div>
+    <div class="verdict {{if ge $a.Percent 60}}verdict-good{{else}}verdict-work{{end}} mb-0">
+      {{if ge $a.Percent 90}}Excellent! You really know this topic.
+      {{else if ge $a.Percent 70}}Great work — review the questions you missed below.
+      {{else if ge $a.Percent 50}}Good effort. Read the explanations, then try again.
+      {{else}}This topic needs more practice. Ask the tutor about the questions you missed.{{end}}
+    </div>
+  </div>
+  <div class="mt">{{template "progressbar" $a.Percent}}</div>
+</section>
+
+{{range $a.Results}}
+<article class="question mt {{if .Correct}}result-correct{{else}}result-wrong{{end}}">
+  <div class="row-between">
+    <span class="question-number">Question {{.Position}} · {{humanize .Type}}</span>
+    {{if .Correct}}<span class="badge badge-success">Correct</span>{{else}}<span class="badge badge-danger">{{if .Given}}Incorrect{{else}}Not answered{{end}}</span>{{end}}
+  </div>
+  <div class="question-prompt prose">{{markdown .Prompt}}</div>
+
+  {{if .Options}}
+  <div class="options">
+    {{$given := .Given}}{{$answer := .Answer}}
+    {{range .Options}}
+    <div class="option {{if eq . $answer}}option-correct{{else if eq . $given}}option-wrong{{end}}">
+      <span>{{if eq . $answer}}✓{{else if eq . $given}}✗{{else}}•{{end}}</span>
+      <span>{{.}}{{if eq . $given}} <em class="muted small">(your answer)</em>{{end}}</span>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <p class="mb-0"><strong>Your answer:</strong> {{if .Given}}{{.Given}}{{else}}<em class="muted">no answer</em>{{end}}</p>
+  <p class="mb-0"><strong>Correct answer:</strong> {{.Answer}}</p>
+  {{end}}
+
+  <div class="explanation">
+    {{if and (not .Correct) .WhyWrong}}<p><strong>Why your answer is wrong:</strong> {{.WhyWrong}}</p>{{end}}
+    <div class="prose"><strong>Explanation:</strong> {{markdown .Explanation}}</div>
+  </div>
+</article>
+{{end}}
+
+<p class="mt"><a href="/tutor?topic={{$a.Quiz.TopicSlug}}">Ask the tutor about {{$a.Quiz.TopicTitle}} →</a></p>
+{{end}}

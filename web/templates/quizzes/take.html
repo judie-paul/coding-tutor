@@ -1,0 +1,45 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/quizzes">Quizzes</a> · <a href="/topics/{{$d.TopicSlug}}">{{$d.TopicTitle}}</a></p>
+    <h1>{{$d.Title}}</h1>
+    <div class="row">
+      {{template "difficulty" $d.Difficulty}}
+      <span class="muted small">{{plural (len $d.Questions) "question" "questions"}}{{if $d.Attempts}} · best score so far {{$d.BestPercent}}%{{end}}</span>
+    </div>
+  </div>
+</header>
+
+<form method="post" action="/quizzes/{{$d.ID}}/attempts" id="quiz-form" data-total="{{len $d.Questions}}">
+  {{template "csrf" .CSRFToken}}
+  <div class="quiz-progress"><span class="muted small" id="quiz-count">Answer every question, then submit.</span></div>
+
+  {{range $d.Questions}}
+  <fieldset class="question" data-question>
+    <legend class="sr-only">Question {{.Position}}</legend>
+    <div class="question-number">Question {{.Position}} · {{humanize .Type}}</div>
+    <div class="question-prompt prose">{{markdown .Prompt}}</div>
+    {{if eq .Type "short_answer"}}
+    <label class="field">
+      <span class="sr-only">Your answer</span>
+      <input type="text" name="q_{{.ID}}" maxlength="200" autocomplete="off" placeholder="Type a short answer">
+    </label>
+    {{else}}
+    <div class="options">
+      {{$qid := .ID}}
+      {{range .Options}}
+      <label class="option"><input type="radio" name="q_{{$qid}}" value="{{.}}"><span>{{.}}</span></label>
+      {{end}}
+    </div>
+    {{end}}
+  </fieldset>
+  {{end}}
+
+  <div class="row-between mt">
+    <a class="btn btn-ghost" href="/quizzes">Cancel</a>
+    <button class="btn btn-primary btn-lg" type="submit">Submit answers</button>
+  </div>
+</form>
+<script src="/static/js/quiz.js" defer></script>
+{{end}}

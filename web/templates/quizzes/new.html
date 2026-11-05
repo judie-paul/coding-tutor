@@ -1,0 +1,49 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb"><a href="/quizzes">Quizzes</a></p>
+    <h1>Create a quiz</h1>
+    <p class="muted">A mix of multiple-choice, true/false and short-answer questions. Answers are hidden until you submit.</p>
+  </div>
+</header>
+
+<section class="card">
+  {{with $d.AIError}}{{template "aierror" .}}{{end}}
+  {{with .Errors.options}}<div class="alert alert-error" role="alert">{{.}}</div>{{end}}
+  <form method="post" action="/quizzes" class="form" data-loading="Writing your quiz…" novalidate>
+    {{template "csrf" .CSRFToken}}
+    <label class="field{{if .Errors.topic_id}} has-error{{end}}">
+      <span>Topic</span>
+      <select name="topic_id" required>
+        <option value="">Choose a topic…</option>
+        {{range $d.Topics}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $.Form.topic_id}} selected{{end}}>{{.Position}}. {{.Title}}</option>{{end}}
+      </select>
+      {{template "fielderror" .Errors.topic_id}}
+    </label>
+
+    <fieldset class="field">
+      <legend class="field-legend"><span>Difficulty</span></legend>
+      <div class="choice-group">
+        {{range $d.Difficulties}}
+        <label class="choice"><input type="radio" name="difficulty" value="{{.}}"{{if eq . $.Form.difficulty}} checked{{end}}><span>{{capitalize .}}</span></label>
+        {{end}}
+      </div>
+    </fieldset>
+
+    <fieldset class="field">
+      <legend class="field-legend"><span>Number of questions</span></legend>
+      <div class="choice-group">
+        {{range $d.Counts}}
+        <label class="choice"><input type="radio" name="count" value="{{.}}"{{if eq (printf "%d" .) $.Form.count}} checked{{end}}><span>{{.}} questions</span></label>
+        {{end}}
+      </div>
+    </fieldset>
+
+    <div class="row-between">
+      <span class="loading-note">{{template "loading"}} Writing questions — this can take a few seconds.</span>
+      <button class="btn btn-primary" type="submit">{{template "icon" "quiz"}} Create quiz</button>
+    </div>
+  </form>
+</section>
+{{end}}
