@@ -61,6 +61,57 @@
   </div>
 
   <aside>
+    <section class="card" id="hints">
+      <div class="card-header">
+        <h2>{{template "icon" "bulb"}} Hints</h2>
+        <span class="muted small">{{len $d.Hints}} of 3 used</span>
+      </div>
+      {{with $d.HintError}}{{template "aierror" .}}{{end}}
+      {{if $d.Hints}}
+      <ol class="hint-list">
+        {{range $d.Hints}}
+        <li class="hint-item">
+          <div class="hint-item-title">Hint {{.Level}}</div>
+          <div class="prose">{{markdown .Content}}</div>
+        </li>
+        {{end}}
+      </ol>
+      {{else}}
+      <p class="muted small">Try on your own first. If you get stuck, hints start small and get more detailed — they never give the answer away.</p>
+      {{end}}
+
+      {{if gt $d.HintsLeft 0}}
+      <form method="post" action="/exercises/{{$e.ID}}/hints" class="form" data-loading="Thinking of a hint…">
+        {{template "csrf" .CSRFToken}}
+        <details>
+          <summary class="small">Share your current attempt for a tailored hint (optional)</summary>
+          <label class="field mt">
+            <span class="sr-only">Your current code</span>
+            <textarea name="current_code" class="code-input" rows="8" spellcheck="false">{{.Form.current_code}}</textarea>
+          </label>
+        </details>
+        <button class="btn btn-secondary btn-block" type="submit">{{template "icon" "bulb"}} Get hint {{add (len $d.Hints) 1}} of 3</button>
+      </form>
+      {{end}}
+
+      {{if $d.Solution}}
+      <div class="hint-item solution mt" id="solution">
+        <div class="hint-item-title">Full solution</div>
+        <div class="prose">{{markdown $d.Solution.Content}}</div>
+        <p class="disclaimer">This solution was written by the AI and has not been compiled or run. Try retyping it yourself and running it with <code class="inline-code">go run</code>.</p>
+      </div>
+      {{else}}
+      <details class="mt">
+        <summary class="small muted">Still stuck? Reveal the full solution</summary>
+        <form method="post" action="/exercises/{{$e.ID}}/solution" class="form mt" data-loading="Writing the solution…" data-confirm="Are you sure? Seeing the solution now means less practice. Try another hint or ask the tutor first.">
+          {{template "csrf" .CSRFToken}}
+          <label class="row small"><input type="checkbox" name="confirm" value="yes" required> I want to see the complete solution.</label>
+          <button class="btn btn-ghost btn-block" type="submit">Show the full solution</button>
+        </form>
+      </details>
+      {{end}}
+    </section>
+
     <section class="card">
       <h2>How to work on this</h2>
       <ol class="key-points">
@@ -69,6 +120,7 @@
         <li>Stuck? Ask for a hint — they get more detailed one step at a time.</li>
         <li>Submit your code for a review when you're ready.</li>
       </ol>
+      <a class="btn btn-ghost btn-sm" href="/tutor?topic={{$e.TopicSlug}}">{{template "icon" "chat"}} Ask the tutor about {{$e.TopicTitle}}</a>
     </section>
   </aside>
 </div>

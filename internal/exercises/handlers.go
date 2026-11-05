@@ -119,7 +119,11 @@ func (h *Handlers) List(w http.ResponseWriter, r *http.Request) {
 
 // showData is the data for the exercise detail page.
 type showData struct {
-	Exercise *Exercise
+	Exercise  *Exercise
+	Hints     []Hint
+	HintsLeft int
+	Solution  *Hint
+	HintError string
 }
 
 // Show renders an exercise.
@@ -133,7 +137,20 @@ func (h *Handlers) renderShow(w http.ResponseWriter, r *http.Request, status int
 	if !ok {
 		return
 	}
-	data := showData{Exercise: e}
+	hints, err := h.Service.Hints(r.Context(), u.ID, e.ID)
+	if err != nil {
+		h.View.ServerError(w, r, err)
+		return
+	}
+	data := showData{Exercise: e, HintsLeft: MaxHints}
+	for i := range hints {
+		if hints[i].IsSolution() {
+			data.Solution = &hints[i]
+			continue
+		}
+		data.Hints = append(data.Hints, hints[i])
+		data.HintsLeft--
+	}
 	if extra != nil {
 		extra(&data)
 	}
@@ -174,4 +191,50 @@ func (h *Handlers) Complete(w http.ResponseWriter, r *http.Request) {
 	}
 	h.View.SetFlash(w, "success", "Exercise marked as completed. Well done!")
 	view.Redirect(w, r, fmt.Sprintf("/exercises/%d", e.ID))
+}
+
+// Hint reveals the next progressive hint.
+func (h *Handlers) Hint(w http.ResponseWriter, r *http.Request) {
+	u := users.FromContext(r.Context())
+	e, ok := h.load(w, r, u.ID)
+	if !ok {
+		return
+	}
+	code := r.PostFormValue("current_code")
+	_, err := h.Service.RequestHint(r.Context(), u, e.ID, code)
+	switch {
+	case errors.Is(err, ErrNoMoreHints):
+		h.View.SetFlash(w, "info", "You've used all three hints. You can still ask the tutor or view the full solution.")
+	case ai.IsAIError(err):
+		h.renderShow(w, r, http.StatusServiceUnavailable, map[string]string{"current_code": code},
+			func(d *showData) { d.HintError = ai.UserMessage(err) })
+		return
+	case err != nil:
+		h.View.ServerError(w, r, err)
+		return
+	}
+	view.Redirect(w, r, fmt.Sprintf("/exercises/%d#hints", e.ID))
+}
+
+// Solution reveals the full solution, only when explicitly confirmed.
+func (h *Handlers) Solution(w http.ResponseWriter, r *http.Request) {
+	u := users.FromContext(r.Context())
+	e, ok := h.load(w, r, u.ID)
+	if !ok {
+		return
+	}
+	_, err := h.Service.RevealSolution(r.Context(), u, e.ID, r.PostFormValue("confirm") == "yes")
+	switch {
+	case errors.Is(err, ErrSolutionNotConfirmed):
+		h.renderShow(w, r, http.StatusUnprocessableEntity, nil,
+			func(d *showData) { d.HintError = "Tick the box to confirm you want to see the full solution." })
+		return
+	case ai.IsAIError(err):
+		h.renderShow(w, r, http.StatusServiceUnavailable, nil, func(d *showData) { d.HintError = ai.UserMessage(err) })
+		return
+	case err != nil:
+		h.View.ServerError(w, r, err)
+		return
+	}
+	view.Redirect(w, r, fmt.Sprintf("/exercises/%d#solution", e.ID))
 }

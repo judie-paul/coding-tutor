@@ -143,6 +143,8 @@ func New(d Deps) (*App, error) {
 	mux.Handle("POST /exercises", aiRoute(exercisesH.Create))
 	mux.Handle("GET /exercises/{id}", protected(exercisesH.Show))
 	mux.Handle("POST /exercises/{id}/complete", protected(exercisesH.Complete))
+	mux.Handle("POST /exercises/{id}/hints", aiRoute(exercisesH.Hint))
+	mux.Handle("POST /exercises/{id}/solution", aiRoute(exercisesH.Solution))
 
 	mux.Handle("GET /settings", protected(settingsH.Show))
 	mux.Handle("POST /settings/profile", protected(settingsH.UpdateProfile))
