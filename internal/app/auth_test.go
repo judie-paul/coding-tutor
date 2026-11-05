@@ -137,3 +137,22 @@ func TestSecurityHeadersAndNotFound(t *testing.T) {
 		}
 	}
 }
+
+func TestDashboardShowsRealCounts(t *testing.T) {
+	env := newTestEnv(t)
+	c := env.newClient(t)
+	c.register("Dee", "dee@example.com")
+
+	r := c.get("/dashboard")
+	mustContain(t, r.Body, "Welcome back, Dee", "Lessons completed", "Your learning journey starts here", "Go Basics")
+
+	// Record activity directly and check it appears.
+	var uid, tid int64
+	env.deps.DB.QueryRow(`SELECT id FROM users WHERE email = 'dee@example.com'`).Scan(&uid)
+	env.deps.DB.QueryRow(`SELECT id FROM topics WHERE slug = 'basics'`).Scan(&tid)
+	env.deps.DB.Exec(`INSERT INTO learning_progress (user_id, topic_id, lesson_completed, last_activity_at, created_at, updated_at) VALUES (?, ?, 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`, uid, tid)
+	env.deps.DB.Exec(`INSERT INTO activity_logs (user_id, topic_id, kind, description, created_at) VALUES (?, ?, 'lesson_completed', 'Completed the lesson', '2026-01-01T00:00:00Z')`, uid, tid)
+
+	r = c.get("/dashboard")
+	mustContain(t, r.Body, "Completed the lesson", `<div class="stat-value">1</div>`)
+}

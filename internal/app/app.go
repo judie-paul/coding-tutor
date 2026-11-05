@@ -10,7 +10,9 @@ import (
 
 	"codingtutor/internal/auth"
 	"codingtutor/internal/config"
+	"codingtutor/internal/dashboard"
 	"codingtutor/internal/middleware"
+	"codingtutor/internal/progress"
 	"codingtutor/internal/settings"
 	"codingtutor/internal/topics"
 	"codingtutor/internal/users"
@@ -48,6 +50,8 @@ func New(d Deps) (*App, error) {
 	sessions := auth.NewSessions(d.DB, userStore, cfg.SessionTTL, cfg.SecureCookies, logger)
 
 	authH := &auth.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
+	progressStore := progress.NewStore(d.DB)
+	dashboardH := &dashboard.Handlers{Progress: progressStore, View: renderer}
 	settingsH := &settings.Handlers{Users: userService, Sessions: sessions, Topics: topicStore, View: renderer}
 
 	// Limit login/registration attempts per client IP to slow down password guessing.
@@ -87,9 +91,7 @@ func New(d Deps) (*App, error) {
 	mux.Handle("POST /login", limitAuth(http.HandlerFunc(authH.Login)))
 	mux.HandleFunc("POST /logout", authH.Logout)
 
-	mux.Handle("GET /dashboard", protected(func(w http.ResponseWriter, r *http.Request) {
-		renderer.Render(w, r, http.StatusOK, "dashboard/dashboard", view.Page{Title: "Dashboard", Nav: "dashboard"})
-	}))
+	mux.Handle("GET /dashboard", protected(dashboardH.Show))
 
 	mux.Handle("GET /settings", protected(settingsH.Show))
 	mux.Handle("POST /settings/profile", protected(settingsH.UpdateProfile))

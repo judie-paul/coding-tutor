@@ -1,8 +1,108 @@
 {{define "content"}}
+{{$d := .Data}}
 <header class="page-header">
   <div>
-    <h1>Welcome, {{.User.FirstName}}</h1>
-    <p class="muted">Your dashboard is being prepared.</p>
+    <h1>Welcome back, {{.User.FirstName}}</h1>
+    <p class="muted">
+      {{if .User.LanguageName}}You're learning <strong>{{.User.LanguageName}}</strong> at the {{.User.ExperienceLevel}} level.
+      {{else}}Choose a language in <a href="/settings">settings</a> to get started.{{end}}
+    </p>
   </div>
+  <a class="btn btn-primary" href="/tutor">{{template "icon" "chat"}} Ask the tutor</a>
 </header>
+
+<section class="stats" aria-label="Learning statistics">
+  <div class="stat">
+    <div class="stat-value">{{$d.Totals.LessonsCompleted}}</div>
+    <div class="stat-label">Lessons completed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">{{$d.Totals.ExercisesAttempted}}</div>
+    <div class="stat-label">Exercises attempted</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">{{$d.Totals.QuizzesCompleted}}</div>
+    <div class="stat-label">Quizzes completed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">{{$d.Totals.TopicsStudied}}<span class="muted small"> / {{$d.Totals.Topics}}</span></div>
+    <div class="stat-label">Topics studied</div>
+  </div>
+</section>
+
+<div class="grid grid-main">
+  <div>
+    <section class="card">
+      <div class="card-header">
+        <h2>Overall progress</h2>
+        <a class="small" href="/progress">View details</a>
+      </div>
+      <div class="progress-ring"><strong>{{$d.Totals.OverallPercent}}%</strong><span class="muted">of the {{.User.LanguageName}} learning path</span></div>
+      <div class="mt">{{template "progressbar" $d.Totals.OverallPercent}}</div>
+      <p class="muted small mt mb-0">Progress comes from what you actually do: completing lessons, solving exercises and passing quizzes.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Recent activity</h2>
+        {{if $d.HasActivity}}<a class="small" href="/progress#history">Full history</a>{{end}}
+      </div>
+      {{if $d.Recent}}
+      <ul class="list">
+        {{range $d.Recent}}
+        <li class="list-item">
+          <span class="dot" aria-hidden="true"></span>
+          <div class="list-item-main">
+            {{if .Link}}<a href="{{.Link}}">{{.Description}}</a>{{else}}<strong>{{.Description}}</strong>{{end}}
+            <span class="list-item-meta">{{if .TopicTitle}}{{.TopicTitle}} · {{end}}<time datetime="{{isoTime .CreatedAt}}">{{timeAgo .CreatedAt}}</time></span>
+          </div>
+        </li>
+        {{end}}
+      </ul>
+      {{else}}
+      <div class="empty-state">
+        {{template "icon" "star"}}
+        <h2>Your learning journey starts here</h2>
+        <p>Pick a topic, ask the tutor a question or try your first exercise. Your activity will show up here.</p>
+        <a class="btn btn-primary" href="/topics">Browse topics</a>
+      </div>
+      {{end}}
+    </section>
+  </div>
+
+  <div>
+    <section class="card">
+      <h2>Recommended next</h2>
+      {{if $d.Recommended}}
+      <ul class="list">
+        {{range $d.Recommended}}
+        <li class="list-item">
+          <div class="list-item-main">
+            <a href="/topics/{{.Slug}}">{{.Title}}</a>
+            <span class="list-item-meta">{{if .Started}}In progress · {{.Score}}%{{else}}Not started yet{{end}}</span>
+          </div>
+          {{template "difficulty" .Difficulty}}
+        </li>
+        {{end}}
+      </ul>
+      {{else if $d.Totals.Topics}}
+      <p class="muted">Amazing — you've covered every topic well. Try harder exercises or revisit topics with a quiz.</p>
+      {{else}}
+      <p class="muted">Choose a language in settings to get recommendations.</p>
+      {{end}}
+    </section>
+
+    <section class="card">
+      <h2>Quick links</h2>
+      <div class="quick-links">
+        <a class="quick-link" href="/tutor">{{template "icon" "chat"}} AI Tutor</a>
+        <a class="quick-link" href="/exercises">{{template "icon" "code"}} Exercises</a>
+        <a class="quick-link" href="/review">{{template "icon" "check"}} Code review</a>
+        <a class="quick-link" href="/quizzes">{{template "icon" "quiz"}} Quizzes</a>
+        <a class="quick-link" href="/topics">{{template "icon" "book"}} Topics</a>
+        <a class="quick-link" href="/progress">{{template "icon" "chart"}} Progress</a>
+      </div>
+    </section>
+  </div>
+</div>
 {{end}}
