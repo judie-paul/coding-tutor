@@ -1,0 +1,9 @@
+# Local configuration and data
+.env
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Build output
+bin/
