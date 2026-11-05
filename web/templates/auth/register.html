@@ -1,0 +1,43 @@
+{{define "content"}}
+<section class="auth-card">
+  <h1>Create your account</h1>
+  <p class="muted">Your personal programming tutor is a minute away.</p>
+  <form method="post" action="/register" class="form" novalidate>
+    {{template "csrf" .CSRFToken}}
+    <label class="field{{if .Errors.name}} has-error{{end}}">
+      <span>Your name</span>
+      <input type="text" name="name" value="{{.Form.name}}" autocomplete="name" maxlength="80" required autofocus>
+      {{template "fielderror" .Errors.name}}
+    </label>
+    <label class="field{{if .Errors.email}} has-error{{end}}">
+      <span>Email</span>
+      <input type="email" name="email" value="{{.Form.email}}" autocomplete="email" required>
+      {{template "fielderror" .Errors.email}}
+    </label>
+    <label class="field{{if .Errors.password}} has-error{{end}}">
+      <span>Password</span>
+      <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+      <small class="hint">At least 8 characters.</small>
+      {{template "fielderror" .Errors.password}}
+    </label>
+    <div class="field-row">
+      <label class="field{{if .Errors.language_id}} has-error{{end}}">
+        <span>Language to learn</span>
+        <select name="language_id">
+          {{range .Data.Languages}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $.Form.language_id}} selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+        {{template "fielderror" .Errors.language_id}}
+      </label>
+      <label class="field{{if .Errors.experience_level}} has-error{{end}}">
+        <span>Experience</span>
+        <select name="experience_level">
+          {{range .Data.Levels}}<option value="{{.}}"{{if eq . $.Form.experience_level}} selected{{end}}>{{capitalize .}}</option>{{end}}
+        </select>
+        {{template "fielderror" .Errors.experience_level}}
+      </label>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Create account</button>
+  </form>
+  <p class="auth-switch">Already have an account? <a href="/login">Log in</a></p>
+</section>
+{{end}}

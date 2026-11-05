@@ -1,0 +1,63 @@
+{{define "base"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · Code Tutor</title>
+  <link rel="icon" href="/static/images/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body class="{{if .User}}is-app{{else}}is-public{{end}}">
+{{if .User}}
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="/dashboard">
+      <img src="/static/images/logo.svg" alt="" width="32" height="32">
+      <span>Code Tutor</span>
+    </a>
+    <nav class="nav">
+      {{template "navlink" dict "Href" "/dashboard" "Label" "Dashboard" "Icon" "home" "Key" "dashboard" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/tutor" "Label" "AI Tutor" "Icon" "chat" "Key" "tutor" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/tutor/history" "Label" "Conversations" "Icon" "history" "Key" "history" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/topics" "Label" "Topics" "Icon" "book" "Key" "topics" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/exercises" "Label" "Exercises" "Icon" "code" "Key" "exercises" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/review" "Label" "Code Review" "Icon" "check" "Key" "review" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/quizzes" "Label" "Quizzes" "Icon" "quiz" "Key" "quizzes" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/progress" "Label" "Progress" "Icon" "chart" "Key" "progress" "Active" .Nav}}
+      {{template "navlink" dict "Href" "/settings" "Label" "Settings" "Icon" "gear" "Key" "settings" "Active" .Nav}}
+    </nav>
+    <div class="sidebar-user">
+      <span class="avatar" aria-hidden="true">{{initial .User.Name}}</span>
+      <div class="sidebar-user-text">
+        <strong>{{.User.Name}}</strong>
+        <small>{{if .User.LanguageName}}Learning {{.User.LanguageName}}{{else}}No language selected{{end}}</small>
+      </div>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <button class="icon-btn" type="submit" title="Log out" aria-label="Log out">{{template "icon" "logout"}}</button>
+      </form>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" data-nav-close></div>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu">{{template "icon" "menu"}}</button>
+      <a class="brand brand-small" href="/dashboard"><img src="/static/images/logo.svg" alt="" width="26" height="26"><span>Code Tutor</span></a>
+    </header>
+    <main class="content" id="content">
+      {{template "flash" .}}
+      {{template "content" .}}
+    </main>
+  </div>
+</div>
+{{else}}
+<main class="public-wrap">
+  <a class="brand brand-public" href="/"><img src="/static/images/logo.svg" alt="" width="36" height="36"><span>Code Tutor</span></a>
+  {{template "flash" .}}
+  {{template "content" .}}
+  <p class="public-footer">&copy; {{.Year}} Code Tutor · Learn to code with a patient AI tutor.</p>
+</main>
+{{end}}
+</body>
+</html>{{end}}

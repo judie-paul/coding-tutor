@@ -20,6 +20,8 @@ type Config struct {
 	SessionTTL time.Duration
 	// SecureCookies marks cookies as Secure (HTTPS only). Defaults to true in production.
 	SecureCookies bool
+	// TrustProxy uses X-Forwarded-For for the client IP. Only enable behind a trusted reverse proxy.
+	TrustProxy bool
 
 	AIBaseURL   string // OpenAI-compatible base URL, e.g. https://api.openai.com/v1
 	AIAPIKey    string // never sent to the browser
@@ -65,6 +67,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	if cfg.SecureCookies, err = getBool("COOKIE_SECURE", env == "production"); err != nil {
+		return Config{}, err
+	}
+	if cfg.TrustProxy, err = getBool("TRUST_PROXY", false); err != nil {
 		return Config{}, err
 	}
 	if cfg.AIJSONMode, err = getBool("AI_JSON_MODE", true); err != nil {

@@ -1,0 +1,8 @@
+{{define "content"}}
+<section class="empty-state error-page">
+  <p class="error-code">{{.Data.Status}}</p>
+  <h1>{{.Title}}</h1>
+  <p class="muted">{{.Data.Message}}</p>
+  <a class="btn btn-primary" href="{{if .User}}/dashboard{{else}}/{{end}}">Go back home</a>
+</section>
+{{end}}

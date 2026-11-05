@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"codingtutor/internal/app"
 	"codingtutor/internal/config"
 	"codingtutor/internal/database"
 	"codingtutor/migrations"
@@ -52,14 +53,17 @@ func run(migrateOnly bool) error {
 		return nil
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
-	})
+	application, err := app.New(app.Deps{Config: cfg, DB: db, Logger: logger})
+	if err != nil {
+		return err
+	}
+	cleanupCtx, stopCleanup := context.WithCancel(ctx)
+	defer stopCleanup()
+	application.Sessions.StartCleanup(cleanupCtx, time.Hour)
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           mux,
+		Handler:           application.Handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      cfg.AITimeout + 30*time.Second, // AI requests can be slow

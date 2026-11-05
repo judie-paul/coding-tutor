@@ -1,0 +1,82 @@
+{{define "content"}}
+<header class="page-header">
+  <div>
+    <h1>Account settings</h1>
+    <p class="muted">Manage your profile, password and data.</p>
+  </div>
+</header>
+
+<div class="settings-grid">
+  <section class="card">
+    <h2>Profile</h2>
+    <p class="muted small">Your experience level changes how the tutor explains things.</p>
+    <form method="post" action="/settings/profile" class="form" novalidate>
+      {{template "csrf" .CSRFToken}}
+      <label class="field{{if .Errors.name}} has-error{{end}}">
+        <span>Name</span>
+        <input type="text" name="name" value="{{.Form.name}}" maxlength="80" required>
+        {{template "fielderror" .Errors.name}}
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input type="email" value="{{.User.Email}}" disabled>
+      </label>
+      <div class="field-row">
+        <label class="field{{if .Errors.language_id}} has-error{{end}}">
+          <span>Language</span>
+          <select name="language_id">
+            {{range .Data.Languages}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $.Form.language_id}} selected{{end}}>{{.Name}}</option>{{end}}
+          </select>
+          {{template "fielderror" .Errors.language_id}}
+        </label>
+        <label class="field{{if .Errors.experience_level}} has-error{{end}}">
+          <span>Experience level</span>
+          <select name="experience_level">
+            {{range .Data.Levels}}<option value="{{.}}"{{if eq . $.Form.experience_level}} selected{{end}}>{{capitalize .}}</option>{{end}}
+          </select>
+          {{template "fielderror" .Errors.experience_level}}
+        </label>
+      </div>
+      <button class="btn btn-primary" type="submit">Save profile</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Change password</h2>
+    <p class="muted small">Changing your password signs you out on other devices.</p>
+    <form method="post" action="/settings/password" class="form" novalidate>
+      {{template "csrf" .CSRFToken}}
+      <label class="field{{if .Errors.current_password}} has-error{{end}}">
+        <span>Current password</span>
+        <input type="password" name="current_password" autocomplete="current-password" required>
+        {{template "fielderror" .Errors.current_password}}
+      </label>
+      <label class="field{{if .Errors.new_password}} has-error{{end}}">
+        <span>New password</span>
+        <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
+        {{template "fielderror" .Errors.new_password}}
+      </label>
+      <label class="field{{if .Errors.confirm_password}} has-error{{end}}">
+        <span>Confirm new password</span>
+        <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
+        {{template "fielderror" .Errors.confirm_password}}
+      </label>
+      <button class="btn btn-primary" type="submit">Change password</button>
+    </form>
+  </section>
+
+  <section class="card card-danger">
+    <h2>Delete account</h2>
+    <p class="muted small">This permanently deletes your account, conversations, exercises, quizzes and progress. It cannot be undone.</p>
+    <form method="post" action="/settings/delete" class="form" data-confirm="Delete your account and all learning history permanently?" novalidate>
+      {{template "csrf" .CSRFToken}}
+      <label class="field{{if .Errors.delete_password}} has-error{{end}}">
+        <span>Confirm with your password</span>
+        <input type="password" name="delete_password" autocomplete="current-password" required>
+        {{template "fielderror" .Errors.delete_password}}
+      </label>
+      <button class="btn btn-danger" type="submit">Delete my account</button>
+    </form>
+  </section>
+</div>
+{{end}}

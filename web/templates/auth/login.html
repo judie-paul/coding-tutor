@@ -1,0 +1,21 @@
+{{define "content"}}
+<section class="auth-card">
+  <h1>Welcome back</h1>
+  <p class="muted">Log in to continue learning.</p>
+  {{with .Errors.login}}<div class="alert alert-error" role="alert">{{.}}</div>{{end}}
+  <form method="post" action="/login" class="form" novalidate>
+    {{template "csrf" .CSRFToken}}
+    <input type="hidden" name="next" value="{{.Form.next}}">
+    <label class="field">
+      <span>Email</span>
+      <input type="email" name="email" value="{{.Form.email}}" autocomplete="email" required autofocus>
+    </label>
+    <label class="field">
+      <span>Password</span>
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+  </form>
+  <p class="auth-switch">New here? <a href="/register">Create a free account</a></p>
+</section>
+{{end}}
