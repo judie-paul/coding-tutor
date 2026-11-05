@@ -181,6 +181,12 @@ func (s *Service) complete(ctx context.Context, tx *sql.Tx, userID int64, e *Exe
 	if n, _ := res.RowsAffected(); n == 0 {
 		return nil // already completed
 	}
+	// Marking an exercise as understood without submitting code still counts as an attempt.
+	if e.SubmissionCount == 0 {
+		if err := s.progress.Increment(ctx, tx, userID, e.TopicID, progress.ExercisesAttempted, 1); err != nil {
+			return err
+		}
+	}
 	if err := s.progress.Increment(ctx, tx, userID, e.TopicID, progress.ExercisesCompleted, 1); err != nil {
 		return err
 	}

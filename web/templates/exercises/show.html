@@ -58,6 +58,40 @@
       <div class="code-block"><pre><code>{{$c.StarterCode}}</code></pre></div>
       {{end}}
     </section>
+
+    <section class="card" id="submit">
+      <h2>Submit your solution</h2>
+      <p class="muted small">Paste your code for an educational review. Your code is read by the AI tutor but is <strong>never compiled or run</strong> by this site, so also test it yourself with <code class="inline-code">go run</code>.</p>
+      {{with $d.SubmitError}}{{template "aierror" .}}{{end}}
+      <form method="post" action="/exercises/{{$e.ID}}/submissions" class="form" data-loading="Reviewing your code…" novalidate>
+        {{template "csrf" .CSRFToken}}
+        <label class="field">
+          <span class="sr-only">Your code</span>
+          <textarea name="code" class="code-input" rows="14" spellcheck="false" maxlength="20000" required placeholder="package main&#10;&#10;func main() {&#10;&#9;// your solution&#10;}">{{if .Form.code}}{{.Form.code}}{{else}}{{$c.StarterCode}}{{end}}</textarea>
+        </label>
+        <div class="row-between">
+          <span class="loading-note">{{template "loading"}} Reading your code carefully…</span>
+          <button class="btn btn-primary" type="submit">{{template "icon" "check"}} Submit for review</button>
+        </div>
+      </form>
+    </section>
+
+    {{if $d.Submissions}}
+    <section class="card">
+      <h2>Your submissions</h2>
+      <ul class="list">
+        {{range $d.Submissions}}
+        <li class="list-item">
+          {{if .LooksCorrect}}<span class="badge badge-success">Looks correct</span>{{else}}<span class="badge badge-warning">Needs work</span>{{end}}
+          <div class="list-item-main">
+            <a href="/review/{{.ID}}">Review from {{dateTime .CreatedAt}}</a>
+            <span class="list-item-meta">{{plural (len .Review.Errors) "issue" "issues"}} · {{plural (len .Review.Suggestions) "suggestion" "suggestions"}}</span>
+          </div>
+        </li>
+        {{end}}
+      </ul>
+    </section>
+    {{end}}
   </div>
 
   <aside>

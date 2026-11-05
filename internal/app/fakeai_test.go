@@ -11,9 +11,10 @@ import (
 // fakeAI answers each AI operation with canned content, so HTTP tests run
 // without network access or API costs. Set fail to simulate an outage.
 type fakeAI struct {
-	mu    sync.Mutex
-	fail  error
-	calls []ai.CompletionRequest
+	mu     sync.Mutex
+	fail   error
+	review string // optional override for code review responses
+	calls  []ai.CompletionRequest
 }
 
 func (f *fakeAI) setFail(err error) {
@@ -55,6 +56,9 @@ func (f *fakeAI) Complete(ctx context.Context, req ai.CompletionRequest) (string
 	case strings.Contains(sys, "complete solution"):
 		return "```go\nfunc Sum(n []int) int { t := 0; for _, v := range n { t += v }; return t }\n```", nil
 	case strings.Contains(sys, "code reviewer"):
+		if f.review != "" {
+			return f.review, nil
+		}
 		return fakeReview, nil
 	case strings.Contains(sys, "programming quizzes"):
 		return fakeQuiz, nil

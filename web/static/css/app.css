@@ -393,6 +393,24 @@ td.num, th.num { text-align: right; white-space: nowrap; }
   tab-size: 4;
 }
 .code-block pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.code-lines {
+  margin: 0; padding: .8rem 0;
+  background: var(--code-bg); color: var(--code-text);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  font-family: var(--mono); font-size: .85rem; line-height: 1.55;
+  list-style: none; counter-reset: line;
+  tab-size: 4;
+}
+.code-lines li { counter-increment: line; white-space: pre; padding-right: 1rem; }
+.code-lines li::before {
+  content: counter(line);
+  display: inline-block; width: 3rem; padding-right: .9rem; margin-right: .6rem;
+  text-align: right; color: #6b7280; border-right: 1px solid #374151;
+  user-select: none;
+}
+.code-lines code { font-family: inherit; }
+
 .copy-btn {
   position: absolute; top: .45rem; right: .45rem;
   padding: .2rem .55rem; font-size: .75rem; font-weight: 600;

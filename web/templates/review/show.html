@@ -1,0 +1,87 @@
+{{define "content"}}
+{{$d := .Data}}
+{{$s := $d.Submission}}
+{{$r := $s.Review}}
+<header class="page-header">
+  <div>
+    <p class="breadcrumb">
+      {{with $d.Exercise}}<a href="/exercises">Exercises</a> · <a href="/exercises/{{.ID}}">{{.Title}}</a>
+      {{else}}<a href="/review">Code review</a>{{end}}
+    </p>
+    <h1>Code review</h1>
+    <p class="muted small">Submitted {{dateTime $s.CreatedAt}}</p>
+  </div>
+  <div class="row">
+    {{with $d.Exercise}}<a class="btn btn-primary" href="/exercises/{{.ID}}#submit">Try again</a>{{else}}<a class="btn btn-primary" href="/review">Review more code</a>{{end}}
+  </div>
+</header>
+
+{{if $r.LooksCorrect}}
+<div class="verdict verdict-good">{{template "icon" "check"}} No errors found — your code looks correct{{if $d.Exercise}} and meets the requirements{{end}}.</div>
+{{else if $r.Errors}}
+<div class="verdict verdict-work">{{template "icon" "warn"}} {{plural (len $r.Errors) "problem needs" "problems need"}} fixing. Read the explanations below and try again.</div>
+{{else}}
+<div class="verdict verdict-work">{{template "icon" "bulb"}} No definite errors found, but the reviewer could not confirm the code is fully correct. See the notes below.</div>
+{{end}}
+
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Your code</h2>
+    <p class="muted small">Exactly as you submitted it.</p>
+    <ol class="code-lines">{{range $s.Lines}}<li><code>{{.}}</code></li>{{end}}</ol>
+  </section>
+
+  <div>
+    <section class="card">
+      <h2>What your code does</h2>
+      <div class="prose">{{markdown $r.Summary}}</div>
+      {{with $r.Encouragement}}<p class="muted"><em>{{.}}</em></p>{{end}}
+    </section>
+
+    <section class="card">
+      <h2>Errors <span class="badge {{if $r.Errors}}badge-danger{{else}}badge-success{{end}}">{{len $r.Errors}}</span></h2>
+      <p class="muted small">Things that are actually wrong: code that won't compile, crashes, gives the wrong result or misses a requirement.</p>
+      {{range $r.Errors}}
+      <div class="finding finding-error">
+        <div class="finding-title">{{.Title}} <span class="badge badge-danger">{{humanize .Kind}}</span>{{if .Line}}<span class="muted small">line {{.Line}}</span>{{end}}</div>
+        <div class="prose"><p>{{.Explanation}}</p></div>
+        {{with .FixHint}}<p class="fix-hint"><strong>How to fix it:</strong> {{.}}</p>{{end}}
+      </div>
+      {{else}}
+      <p class="mb-0">No actual errors were found.</p>
+      {{end}}
+    </section>
+  </div>
+</div>
+
+{{if $r.EdgeCases}}
+<section class="card mt">
+  <h2>Edge cases to think about</h2>
+  <ul class="key-points">{{range $r.EdgeCases}}<li>{{.}}</li>{{end}}</ul>
+</section>
+{{end}}
+
+<section class="card mt">
+  <h2>Suggestions <span class="badge badge-primary">{{len $r.Suggestions}}</span></h2>
+  <p class="muted small">Optional improvements. Your code can be correct without these, but they make it better.</p>
+  {{range $r.Suggestions}}
+  <div class="finding finding-suggestion">
+    <div class="finding-title">{{.Title}} <span class="badge">{{humanize .Kind}}</span>{{if .Line}}<span class="muted small">line {{.Line}}</span>{{end}}</div>
+    <p>{{.Explanation}}</p>
+    {{with .FixHint}}<p class="fix-hint">{{.}}</p>{{end}}
+  </div>
+  {{else}}
+  <p class="mb-0">No suggestions — nice and clean.</p>
+  {{end}}
+</section>
+
+{{with $r.CorrectedExample}}
+<section class="card mt">
+  <h2>A corrected example</h2>
+  <p class="muted small">Compare it with your code to see the difference, then try fixing your own version.</p>
+  <div class="code-block"><pre><code>{{.}}</code></pre></div>
+</section>
+{{end}}
+
+<p class="disclaimer">This review was produced by an AI reading your code as text. The code was not compiled or executed, so always confirm by running it yourself.</p>
+{{end}}

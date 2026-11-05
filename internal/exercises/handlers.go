@@ -119,11 +119,13 @@ func (h *Handlers) List(w http.ResponseWriter, r *http.Request) {
 
 // showData is the data for the exercise detail page.
 type showData struct {
-	Exercise  *Exercise
-	Hints     []Hint
-	HintsLeft int
-	Solution  *Hint
-	HintError string
+	Exercise    *Exercise
+	Hints       []Hint
+	HintsLeft   int
+	Solution    *Hint
+	HintError   string
+	Submissions []*Submission
+	SubmitError string
 }
 
 // Show renders an exercise.
@@ -142,7 +144,12 @@ func (h *Handlers) renderShow(w http.ResponseWriter, r *http.Request, status int
 		h.View.ServerError(w, r, err)
 		return
 	}
-	data := showData{Exercise: e, HintsLeft: MaxHints}
+	subs, err := h.Service.Submissions(r.Context(), u.ID, e.ID, 0)
+	if err != nil {
+		h.View.ServerError(w, r, err)
+		return
+	}
+	data := showData{Exercise: e, HintsLeft: MaxHints, Submissions: subs}
 	for i := range hints {
 		if hints[i].IsSolution() {
 			data.Solution = &hints[i]

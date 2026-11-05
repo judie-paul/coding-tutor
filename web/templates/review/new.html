@@ -1,0 +1,46 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="page-header">
+  <div>
+    <h1>Code review</h1>
+    <p class="muted">Paste any {{if .User.LanguageName}}{{.User.LanguageName}} {{end}}code and get friendly, educational feedback: what it does, actual errors, edge cases and ways to improve it.</p>
+  </div>
+</header>
+
+<div class="grid grid-main">
+  <section class="card">
+    {{with $d.AIError}}{{template "aierror" .}}{{end}}
+    <form method="post" action="/review" class="form" data-loading="Reviewing your code…" novalidate>
+      {{template "csrf" .CSRFToken}}
+      <label class="field{{if .Errors.code}} has-error{{end}}">
+        <span>Your code</span>
+        <textarea name="code" class="code-input" rows="18" spellcheck="false" maxlength="20000" required placeholder="package main&#10;&#10;import &quot;fmt&quot;&#10;&#10;func main() {&#10;&#9;fmt.Println(&quot;Hello&quot;)&#10;}">{{.Form.code}}</textarea>
+        {{template "fielderror" .Errors.code}}
+      </label>
+      <div class="row-between">
+        <span class="loading-note">{{template "loading"}} Reading your code carefully…</span>
+        <button class="btn btn-primary" type="submit">{{template "icon" "check"}} Review my code</button>
+      </div>
+    </form>
+    <p class="disclaimer">Your code is sent to the AI tutor as text. It is never compiled or executed on this site, so the review is based on reading the code only.</p>
+  </section>
+
+  <section class="card">
+    <h2>Previous reviews</h2>
+    {{if $d.Recent}}
+    <ul class="list">
+      {{range $d.Recent}}
+      <li class="list-item">
+        <div class="list-item-main">
+          <a href="/review/{{.ID}}">{{if .ExerciseTitle}}{{.ExerciseTitle}}{{else}}Free-form review{{end}}</a>
+          <span class="list-item-meta">{{timeAgo .CreatedAt}} · {{if .LooksCorrect}}looks correct{{else}}{{plural (len .Review.Errors) "issue" "issues"}}{{end}}</span>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted">Your reviews will be listed here so you can look back at them later.</p>
+    {{end}}
+  </section>
+</div>
+{{end}}
